@@ -8,7 +8,7 @@ phases:
   pre_build:
     commands:
       - echo "Reading image URI from build artifact..."
-      - export IMAGE_URI=$(cat imagedetail.json | python3 -c "import sys,json; print(json.load(sys.stdin)['ImageURI'])")
+      - export IMAGE_URI=$(cat $CODEBUILD_SRC_DIR_BuildArtifact/imagedetail.json | python3 -c "import sys,json; print(json.load(sys.stdin)['ImageURI'])")
       - echo "Will deploy image $IMAGE_URI"
       - git config --global user.email "codebuild@eks-demo.com"
       - git config --global user.name "CodeBuild"

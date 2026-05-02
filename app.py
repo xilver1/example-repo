@@ -4,6 +4,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Hello from EKS after an update to myself!")
+        self.wfile.write(b"I've changed!")
 
 HTTPServer(("", 8080), Handler).serve_forever()
