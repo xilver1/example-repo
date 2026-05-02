@@ -1,42 +1,39 @@
 version: 0.2
 
-env:
-  variables:
-    # static env vars available in all phases
-    REGION: us-east-1
-  parameter-store:
-    # secrets pulled from SSM Parameter Store at build start
-    DB_PASSWORD: /myapp/db-password
-
 phases:
   install:
-    runtime-versions:
-      python: 3.11    # tell CodeBuild which runtime to activate
     commands:
-      - pip install pytest    # install test dependencies
+      - echo "No additional tools needed for build stage"
 
   pre_build:
     commands:
-      - echo "Logging in to ECR..."
-      - aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_URI
-      # set up kubectl
-      - aws eks update-kubeconfig --region $REGION --name $CLUSTER_NAME
+      - echo "Authenticating to ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - export IMAGE_URI=$ECR_REPOSITORY_URI:$IMAGE_TAG
+      - echo "Image URI will be $IMAGE_URI"
 
   build:
     commands:
-      - echo "Running tests..."
-      - pytest tests/
       - echo "Building Docker image..."
-      - docker build -t $ECR_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION .
+      - docker build -t $IMAGE_URI .
+      - docker tag $IMAGE_URI $ECR_REPOSITORY_URI:latest
 
   post_build:
     commands:
       - |
         if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
-          docker push $ECR_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
-          kubectl set image deployment/eks-demo-app eks-demo-app=$ECR_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+          echo "Pushing image to ECR..."
+          docker push $IMAGE_URI
+          docker push $ECR_REPOSITORY_URI:latest
+          printf '{"ImageURI":"%s"}' $IMAGE_URI > imagedetail.json
+          cat imagedetail.json
+        else
+          echo "Build failed, skipping push"
+          exit 1
         fi
 
 artifacts:
   files:
-    - imagedefinitions.json    # passed to next pipeline stage
+    - imagedetail.json

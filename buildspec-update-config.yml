@@ -1,0 +1,41 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "No additional tools needed"
+
+  pre_build:
+    commands:
+      - echo "Reading image URI from build artifact..."
+      - export IMAGE_URI=$(cat imagedetail.json | python3 -c "import sys,json; print(json.load(sys.stdin)['ImageURI'])")
+      - echo "Will deploy image $IMAGE_URI"
+      - git config --global user.email "codebuild@eks-demo.com"
+      - git config --global user.name "CodeBuild"
+
+  build:
+    commands:
+      - echo "Cloning config repo..."
+      - git clone https://oauth2:$GITHUB_TOKEN@$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||') config-repo
+      - cd config-repo
+      - echo "Updating image in deployment manifest..."
+      - sed -i "s|image:.*eks-demo-app.*|image: $IMAGE_URI|" k8s/eks-demo-app/deployment.yaml
+      - cat k8s/eks-demo-app/deployment.yaml
+
+  post_build:
+    commands:
+      - |
+        if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
+          cd config-repo
+          git add k8s/eks-demo-app/deployment.yaml
+          git commit -m "deploy: update eks-demo-app to $IMAGE_URI"
+          git push
+          echo "Config repo updated successfully"
+        else
+          echo "Failed to update config repo"
+          exit 1
+        fi
+
+artifacts:
+  files:
+    - imagedetail.json
