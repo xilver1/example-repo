@@ -18,20 +18,16 @@ phases:
       - echo "Cloning config repo..."
       - CONFIG_REPO_URL=$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||')
       - git clone https://oauth2:$GITHUB_TOKEN@$CONFIG_REPO_URL config-repo
-      - cd config-repo
       - echo "Updating image in deployment manifest..."
-      - envsubst < eks-demo-app/deployment.yaml > eks-demo-app/deployment_updated.yaml
-      - mv eks-demo-app/deployment_updated.yaml eks-demo-app/deployment.yaml
-      - cat eks-demo-app/deployment.yaml
+      - envsubst < config-repo/eks-demo-app/deployment.yaml > config-repo/eks-demo-app/deployment_updated.yaml
+      - mv config-repo/eks-demo-app/deployment_updated.yaml config-repo/eks-demo-app/deployment.yaml
+      - cat config-repo/eks-demo-app/deployment.yaml
 
   post_build:
     commands:
       - |
         if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
-          cd config-repo
-          git add eks-demo-app/deployment.yaml
-          git commit -m "deploy: update eks-demo-app to $IMAGE_URI"
-          git push
+          cd config-repo && git add eks-demo-app/deployment.yaml && git commit -m "deploy: update eks-demo-app to $IMAGE_URI" && git push
           echo "Config repo updated successfully"
         else
           echo "Failed to update config repo"
