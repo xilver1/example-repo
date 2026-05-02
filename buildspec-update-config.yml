@@ -20,7 +20,8 @@ phases:
       - git clone https://oauth2:$GITHUB_TOKEN@$CONFIG_REPO_URL config-repo
       - cd config-repo
       - echo "Updating image in deployment manifest..."
-      - sed -i "s|image:.*eks-demo-app.*|image: $IMAGE_URI|" eks-demo-app/deployment.yaml
+      - envsubst < eks-demo-app/deployment.yaml > eks-demo-app/deployment_updated.yaml
+      - mv eks-demo-app/deployment_updated.yaml eks-demo-app/deployment.yaml
       - cat eks-demo-app/deployment.yaml
 
   post_build:
@@ -28,7 +29,7 @@ phases:
       - |
         if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
           cd config-repo
-          git add k8s/eks-demo-app/deployment.yaml
+          git add eks-demo-app/deployment.yaml
           git commit -m "deploy: update eks-demo-app to $IMAGE_URI"
           git push
           echo "Config repo updated successfully"
