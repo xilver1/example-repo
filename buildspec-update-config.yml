@@ -18,6 +18,8 @@ phases:
       - echo "Cloning config repo..."
       - CONFIG_REPO_URL=$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||')
       - git clone https://oauth2:$GITHUB_TOKEN@$CONFIG_REPO_URL config-repo
+      - echo "Listing config repo contents..."
+      - find config-repo -type f
       - echo "Updating image in deployment manifest..."
       - envsubst < config-repo/eks-demo-app/deployment.yaml > config-repo/eks-demo-app/deployment_updated.yaml
       - mv config-repo/eks-demo-app/deployment_updated.yaml config-repo/eks-demo-app/deployment.yaml
