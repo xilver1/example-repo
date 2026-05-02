@@ -19,8 +19,8 @@ phases:
       - CONFIG_REPO_URL=$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||')
       - git clone https://oauth2:$GITHUB_TOKEN@$CONFIG_REPO_URL config-repo
       - echo "Updating image in deployment manifest..."
-      - envsubst < config-repo/eks-demo-app/deployment.yml > config-repo/eks-demo-app/deployment_updated.yml
-      - mv config-repo/eks-demo-app/deployment_updated.yml config-repo/eks-demo-app/deployment.yml
+      - |
+        sed -i "s|image: .*eks-demo-app.*|image: $IMAGE_URI|" config-repo/eks-demo-app/deployment.yml
       - cat config-repo/eks-demo-app/deployment.yml
 
   post_build:
