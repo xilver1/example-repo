@@ -16,11 +16,12 @@ phases:
   build:
     commands:
       - echo "Cloning config repo..."
-      - git clone https://oauth2:$GITHUB_TOKEN@$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||') config-repo
+      - CONFIG_REPO_URL=$(echo $GITHUB_CONFIG_REPOSITORY_URI | sed 's|https://||')
+      - git clone https://oauth2:$GITHUB_TOKEN@$CONFIG_REPO_URL config-repo
       - cd config-repo
       - echo "Updating image in deployment manifest..."
-      - sed -i "s|image:.*eks-demo-app.*|image: $IMAGE_URI|" k8s/eks-demo-app/deployment.yaml
-      - cat k8s/eks-demo-app/deployment.yaml
+      - sed -i "s|image:.*eks-demo-app.*|image: $IMAGE_URI|" eks-demo-app/deployment.yaml
+      - cat eks-demo-app/deployment.yaml
 
   post_build:
     commands:
